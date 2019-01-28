@@ -37,12 +37,15 @@ struct DefaultUserService: UserService {
                 if try digest.verify(user.password, created: persistedUser.password) {
                     let accessToken = try TokenHelpers.createAccessToken(from: persistedUser)
                     let expiredAt = try TokenHelpers.expiredDate(of: accessToken)
-                    let accessDto = AccessDto(accessToken: accessToken, expiredAt: expiredAt)
+                    let refreshToken = TokenHelpers.createRefreshToken()
+                    let accessDto = AccessDto(refreshToken: refreshToken, accessToken: accessToken, expiredAt: expiredAt)
                     
-                    return request.future(accessDto)
+                    return RefreshToken(token: refreshToken, userID: try persistedUser.requireID())
+                        .save(on: request)
+                        .transform(to: accessDto)
                 } else {
                     throw Abort(.badRequest, reason: "Incorrect user password")
                 }
-        }
+          }
     }
 }

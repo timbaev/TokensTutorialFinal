@@ -26,6 +26,10 @@ extension User {
     var todos: Children<User, Todo> {
         return self.children(\.userID)
     }
+    
+    var refreshTokens: Children<User, RefreshToken> {
+        return self.children(\.userID)
+    }
 }
 
 extension User: SQLiteMigration {
