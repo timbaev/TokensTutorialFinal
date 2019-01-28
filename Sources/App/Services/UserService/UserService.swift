@@ -9,5 +9,7 @@ import Vapor
 
 protocol UserService {
     
-    func signUp(request: Request, user: User) throws -> EventLoopFuture<ResponseDto>
+    func signUp(request: Request, user: User) throws -> Future<ResponseDto>
+    func signIn(request: Request, user: User) throws -> Future<AccessDto>
+    
 }

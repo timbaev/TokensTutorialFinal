@@ -2,28 +2,33 @@ import Vapor
 
 final class TodoController {
     
-    func index(_ req: Request) throws -> Future<[Todo]> {
-        return Todo.query(on: req).all()
+    fileprivate var todoService: TodoService
+    
+    init(todoService: TodoService) {
+        self.todoService = todoService
+    }
+    
+    func fetch(_ req: Request) throws -> Future<[TodoDto]> {
+        return try self.todoService.fetch(request: req)
     }
 
-    func create(_ req: Request) throws -> Future<Todo> {
-        return try req.content.decode(Todo.self).flatMap { todo in
-            return todo.save(on: req)
-        }
+    func create(_ req: Request, todoDto: TodoDto) throws -> Future<TodoDto> {
+        return try self.todoService.create(request: req, todoDto: todoDto)
     }
 
-    func delete(_ req: Request) throws -> Future<HTTPStatus> {
-        return try req.parameters.next(Todo.self).flatMap { todo in
-            return todo.delete(on: req)
-        }.transform(to: .ok)
+    func delete(_ req: Request) throws -> Future<TodoDto> {
+        let todoID = try req.parameters.next(Int.self)
+        return try self.todoService.delete(request: req, todoID: todoID)
     }
 }
 
 extension TodoController: RouteCollection {
     
     func boot(router: Router) throws {
-        router.get("todos", use: self.index)
-        router.post("todos", use: self.create)
-        router.delete("todos", Todo.parameter, use: self.delete)
+        let group = router.grouped("v1/todo").grouped(JWTMiddleware())
+        
+        group.post(TodoDto.self, use: self.create)
+        group.get(use: self.fetch)
+        group.delete(Int.parameter, use: self.delete)
     }
 }

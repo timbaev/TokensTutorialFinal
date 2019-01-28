@@ -4,7 +4,7 @@ import Vapor
 public func routes(_ router: Router) throws {
     // MARK: - TodoController
     
-    let todoController = TodoController()
+    let todoController = TodoController(todoService: ProjectServices.todoService)
     
     try router.register(collection: todoController)
     

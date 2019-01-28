@@ -19,8 +19,8 @@ final class UserController {
         return try self.userService.signUp(request: request, user: user)
     }
     
-    func signIn(_ request: Request, user: User) throws -> Future<HTTPResponseStatus> {
-        return request.future(.notImplemented)
+    func signIn(_ request: Request, user: User) throws -> Future<AccessDto> {
+        return try self.userService.signIn(request: request, user: user)
     }
 }
 
