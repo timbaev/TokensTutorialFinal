@@ -48,4 +48,33 @@ struct DefaultUserService: UserService {
                 }
           }
     }
+    
+    func refreshToken(request: Request, refreshTokenDto: RefreshTokenDto) throws -> Future<AccessDto> {
+        let refreshTokenModel = RefreshToken
+            .query(on: request)
+            .filter(\.token == refreshTokenDto.refreshToken)
+            .first()
+            .unwrap(or: Abort(.unauthorized))
+        
+        return refreshTokenModel.flatMap { refreshTokenModel in
+            if refreshTokenModel.expiredAt > Date() {
+                return refreshTokenModel.user.get(on: request).flatMap { user in
+                    let accessToken = try TokenHelpers.createAccessToken(from: user)
+                    let refreshToken = TokenHelpers.createRefreshToken()
+                    let expiredAt = try TokenHelpers.expiredDate(of: accessToken)
+                    
+                    refreshTokenModel.token = refreshToken
+                    refreshTokenModel.updateExpiredDate()
+                    
+                    let accessDto = AccessDto(refreshToken: refreshToken, accessToken: accessToken, expiredAt: expiredAt)
+                    
+                    return refreshTokenModel.save(on: request).transform(to: accessDto)
+                }
+            } else {
+                return refreshTokenModel.delete(on: request).thenThrowing {
+                    throw Abort(.unauthorized)
+                }
+            }
+        }
+    }
 }
